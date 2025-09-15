@@ -588,7 +588,7 @@ try {
             }
             
             # Wait and verify termination
-            Start-Sleep -Seconds 1
+            Start-Sleep -Seconds 3
             $finalExcelProcesses = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
             
             if ($finalExcelProcesses) {
