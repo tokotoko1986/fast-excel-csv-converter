@@ -39,7 +39,7 @@ Unlike other converters (including MarkItDown), this tool ensures **pixel-perfec
 1. **Download the script**
    ```bash
    # Clone this repository
-   git clone https://github.com/yourusername/fast-excel-csv-converter.git
+   git clone https://github.com/tokotoko1986/fast-excel-csv-converter.git
    cd fast-excel-csv-converter
    ```
 
