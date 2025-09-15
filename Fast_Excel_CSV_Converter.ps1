@@ -1,7 +1,7 @@
 ##################################################
 # Fast Excel to CSV Converter
 # 
-# Version     : 1.0.0
+# Version     : 1.0.1
 # Release Date: 2025-9-15
 # Author      : Ryo Osawa & Claude Sonnet 4.0
 # Repository  : https://github.com/yourusername/fast-excel-csv-converter
@@ -17,7 +17,7 @@
 # Version information (accessible during runtime)
 $Global:ConverterInfo = @{
     Name = "Fast Excel to CSV Converter"
-    Version = "1.0.0"
+    Version = "1.0.1"
     ReleaseDate = "2025-9-15"
     Author = "Ryo Osawa & Claude Sonnet 4.0"
     Repository = "https://github.com/yourusername/fast-excel-csv-converter"
@@ -175,7 +175,7 @@ function Test-HasFormattedCells {
     # Find first data row to start sampling from actual data
     $firstDataRow = Get-FirstDataRow $values $rowCount $colCount
     
-    # Dynamic sample size based on column count (columns Ã— 10)
+    # Dynamic sample size based on column count (columns × 10)
     $sampleSize = $colCount * 10
     
     # Calculate rows to sample (maximum 10 rows from first data row)
@@ -188,15 +188,17 @@ function Test-HasFormattedCells {
     $totalCells = $rowCount * $colCount
     if ($totalCells -le $sampleSize) {
         if ($rowCount -eq 1 -and $colCount -eq 1) {
-            return $formats -ne "General"
+            $format = $formats
+            return ($format -ne "General" -and $format -ne "@")
         } elseif ($rowCount -eq 1) {
-            return ($formats | Where-Object { $_ -ne "General" }).Count -gt 0
+            return ($formats | Where-Object { $_ -ne "General" -and $_ -ne "@" }).Count -gt 0
         } elseif ($colCount -eq 1) {
-            return ($formats | Where-Object { $_ -ne "General" }).Count -gt 0
+            return ($formats | Where-Object { $_ -ne "General" -and $_ -ne "@" }).Count -gt 0
         } else {
             for ($row = 1; $row -le $rowCount; $row++) {
                 for ($col = 1; $col -le $colCount; $col++) {
-                    if ($formats[$row, $col] -ne "General") {
+                    $format = $formats[$row, $col]
+                    if ($format -ne "General" -and $format -ne "@") {
                         return $true
                     }
                 }
@@ -221,7 +223,7 @@ function Test-HasFormattedCells {
             
             $actualDataSamples++
             $format = Get-CellFormat $formats $row $col $rowCount $colCount
-            if ($format -ne "General") {
+            if ($format -ne "General" -and $format -ne "@") {
                 Write-Host "      Formatted cells detected (sampled $actualDataSamples data cells)" -ForegroundColor Gray
                 return $true
             }
@@ -270,7 +272,7 @@ function Convert-WithFormatCheck {
             $cellFormat = Get-CellFormat $formats $row $col $rowCount $colCount
             
             # Use formatted text for non-General formats or when display differs from value
-            if ($cellFormat -ne "General") {
+            if ($cellFormat -ne "General" -and $cellFormat -ne "@") {
                 $cellText = Get-CellText $texts $row $col $rowCount $colCount
                 if (-not [string]::IsNullOrEmpty($cellText)) {
                     $cellValue = $cellText
@@ -293,26 +295,26 @@ function Convert-WithFormatCheck {
 function Convert-LargeSheetToCSV {
     param($sheet, $chunkSize = 1000)
     
-    $usedRange = $sheet.UsedRange
-    $totalRowCount = $usedRange.Rows.Count
-    $colCount = $usedRange.Columns.Count
+    # Get the maximum used row and column from the sheet
+    $maxRow = $sheet.UsedRange.Row + $sheet.UsedRange.Rows.Count - 1
+    $maxCol = $sheet.UsedRange.Column + $sheet.UsedRange.Columns.Count - 1
+    
+    # Always start from A1 (row 1, column 1) to preserve blank rows/columns
+    $totalRowCount = $maxRow
+    $totalColCount = $maxCol
     $csvContent = @()
     
-    Write-Host "    Processing large sheet in chunks..." -ForegroundColor Yellow
+    Write-Host "    Processing large sheet in chunks (preserving blanks from A1)..." -ForegroundColor Yellow
+    Write-Host "    Sheet range: A1 to $($sheet.Cells($maxRow, $maxCol).Address(0, 0))" -ForegroundColor Gray
     
     for ($startRow = 1; $startRow -le $totalRowCount; $startRow += $chunkSize) {
         $endRow = [Math]::Min($startRow + $chunkSize - 1, $totalRowCount)
         $chunkRowCount = $endRow - $startRow + 1
         
-        # Define chunk range
-        $startRowAbs = $usedRange.Row + $startRow - 1
-        $endRowAbs = $usedRange.Row + $endRow - 1
-        $startColAbs = $usedRange.Column
-        $endColAbs = $usedRange.Column + $colCount - 1
-        
+        # Define chunk range from A1 origin (not UsedRange relative)
         $chunkRange = $sheet.Range(
-            $sheet.Cells($startRowAbs, $startColAbs),
-            $sheet.Cells($endRowAbs, $endColAbs)
+            $sheet.Cells($startRow, 1),
+            $sheet.Cells($endRow, $totalColCount)
         )
         
         # Get chunk data
@@ -320,11 +322,11 @@ function Convert-LargeSheetToCSV {
         $chunkFormats = $chunkRange.NumberFormat
         
         # Check if chunk has formatted cells using improved sampling
-        $hasFormattedCells = Test-HasFormattedCells $chunkValues $chunkFormats $chunkRowCount $colCount
+        $hasFormattedCells = Test-HasFormattedCells $chunkValues $chunkFormats $chunkRowCount $totalColCount
         
         if (-not $hasFormattedCells) {
             # Fast processing for chunk
-            $chunkContent = Convert-SimpleValues $chunkValues $chunkRowCount $colCount
+            $chunkContent = Convert-SimpleValues $chunkValues $chunkRowCount $totalColCount
         } else {
             # Standard processing for chunk
             $chunkTexts = $chunkRange.Text
@@ -353,11 +355,14 @@ function Convert-SheetToCSV-Optimized {
         return @() 
     }
     
-    $rowCount = $usedRange.Rows.Count
-    $colCount = $usedRange.Columns.Count
+    # Calculate full sheet dimensions from A1
+    $maxRow = $usedRange.Row + $usedRange.Rows.Count - 1
+    $maxCol = $usedRange.Column + $usedRange.Columns.Count - 1
+    $rowCount = $maxRow
+    $colCount = $maxCol
     $cellCount = $rowCount * $colCount
     
-    Write-Host "    Sheet size: $rowCount x $colCount ($cellCount cells)" -ForegroundColor Gray
+    Write-Host "    Sheet size: A1 to $($sheet.Cells($maxRow, $maxCol).Address(0, 0)) ($cellCount cells)" -ForegroundColor Gray
     
     # Determine processing strategy based on size
     if ($cellCount -gt $script:LargeSheetThreshold) {
@@ -365,12 +370,13 @@ function Convert-SheetToCSV-Optimized {
         return Convert-LargeSheetToCSV $sheet $script:ChunkSize
     }
     
-    # For medium and small sheets, use batch analysis
-    $values = $usedRange.Value2
+    # For medium and small sheets, get full range from A1
+    $fullRange = $sheet.Range($sheet.Cells(1, 1), $sheet.Cells($maxRow, $maxCol))
+    $values = $fullRange.Value2
     
     if ($cellCount -gt $script:MediumSheetThreshold) {
         Write-Host "    Strategy: Analyzing formats with improved sampling..." -ForegroundColor Cyan
-        $formats = $usedRange.NumberFormat
+        $formats = $fullRange.NumberFormat
         $hasFormattedCells = Test-HasFormattedCells $values $formats $rowCount $colCount
     } else {
         Write-Host "    Strategy: Standard processing (small dataset)" -ForegroundColor Cyan
@@ -382,9 +388,9 @@ function Convert-SheetToCSV-Optimized {
         return Convert-SimpleValues $values $rowCount $colCount
     } else {
         Write-Host "    Mode: Standard processing (formatted cells detected)" -ForegroundColor Yellow
-        $formats = if ($cellCount -gt $script:MediumSheetThreshold) { $formats } else { $usedRange.NumberFormat }
-        $texts = $usedRange.Text
-        return Convert-WithFormatCheck $sheet $usedRange $values $formats $texts
+        $formats = if ($cellCount -gt $script:MediumSheetThreshold) { $formats } else { $fullRange.NumberFormat }
+        $texts = $fullRange.Text
+        return Convert-WithFormatCheck $sheet $fullRange $values $formats $texts
     }
 }
 
