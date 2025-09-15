@@ -7,7 +7,17 @@
 > 🚀 **High-performance Excel to CSV converter with intelligent optimization**  
 > Convert your Excel files to CSV format while preserving exactly what you see in Excel - dates, percentages, currency, and all formatting intact!
 
-## ✨ Why This Tool?
+---
+
+## 🌏 Language / 言語選択
+
+- [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+### ✨ Why This Tool?
 
 Unlike other converters (including MarkItDown), this tool ensures **pixel-perfect accuracy**:
 
@@ -17,7 +27,7 @@ Unlike other converters (including MarkItDown), this tool ensures **pixel-perfec
 | `44927` | `2023/1/1` ✅ |
 | `1000` | `¥1,000` ✅ |
 
-## 🌟 Key Features
+### 🌟 Key Features
 
 - 🎯 **Zero Configuration** - Just run and convert!
 - ⚡ **Intelligent Optimization** - Automatically selects the best processing strategy
@@ -27,14 +37,14 @@ Unlike other converters (including MarkItDown), this tool ensures **pixel-perfec
 - 🛡️ **Safe Execution** - Proper Excel process management and cleanup
 - 🌐 **UTF-8 Support** - Perfect for international characters
 
-## 🚀 Quick Start
+### 🚀 Quick Start
 
-### Prerequisites
+#### Prerequisites
 - Windows OS
 - Microsoft Excel installed
 - PowerShell 5.1 or later
 
-### Installation & Usage
+#### Installation & Usage
 
 1. **Download the script**
    ```bash
@@ -60,7 +70,7 @@ Unlike other converters (including MarkItDown), this tool ensures **pixel-perfec
    - Select Excel files to convert
    - Watch the magic happen! ✨
 
-## 📁 Output
+### 📁 Output
 
 Your CSV files will be organized in a timestamped folder:
 ```
@@ -71,7 +81,7 @@ Your CSV files will be organized in a timestamped folder:
 └── 📄 error.log (if any issues occurred)
 ```
 
-## 🎯 Performance Comparison
+### 🎯 Performance Comparison
 
 | File Size | Sheets | Processing Time | Memory Usage |
 |-----------|--------|----------------|--------------|
@@ -79,7 +89,7 @@ Your CSV files will be organized in a timestamped folder:
 | 50MB | 10 sheets | ~2 minutes | Moderate |
 | 200MB+ | 20+ sheets | ~8 minutes | Efficient chunking |
 
-## 🧠 How It Works
+### 🧠 How It Works
 
 The tool uses a **sophisticated 3-tier optimization strategy**:
 
@@ -88,13 +98,114 @@ The tool uses a **sophisticated 3-tier optimization strategy**:
 3. **🎯 Precision Mode** - For formatted data (maintains visual accuracy)
 4. **🔄 Chunk Mode** - For large datasets (memory-efficient processing)
 
-## 🛡️ Safety Features
+### 🛡️ Safety Features
 
 - **Pre-execution warning** about Excel process management
 - **Automatic Excel cleanup** prevents hanging processes  
 - **Error logging** for troubleshooting
 - **Progress tracking** for long operations
 - **Graceful degradation** continues processing even if some files fail
+
+---
+
+## Japanese
+
+### ✨ なぜこのツールなのか？
+
+他のコンバーター（MarkItDownを含む）とは異なり、このツールは**完璧な精度**を保証します：
+
+| 他のツール | このツール |
+|------------|-----------|
+| `0.25` | `25%` ✅ |
+| `44927` | `2023/1/1` ✅ |
+| `1000` | `¥1,000` ✅ |
+
+### 🌟 主な機能
+
+- 🎯 **設定不要** - 実行するだけで変換完了！
+- ⚡ **インテリジェント最適化** - 最適な処理戦略を自動選択
+- 📊 **フォーマット保持** - 日付、パーセント、通貨などの表示形式を維持
+- 🔄 **バッチ処理** - 複数のExcelファイルを一度に変換
+- 💾 **メモリ効率** - チャンク処理で大容量ファイルにも対応
+- 🛡️ **安全実行** - 適切なExcelプロセス管理とクリーンアップ
+- 🌐 **UTF-8対応** - 日本語などの国際文字も完璧にサポート
+
+### 🚀 クイックスタート
+
+#### 前提条件
+- Windows OS
+- Microsoft Excel がインストール済み
+- PowerShell 5.1 以上
+
+#### インストール＆使用方法
+
+1. **スクリプトのダウンロード**
+   ```bash
+   # このリポジトリをクローン
+   git clone https://github.com/tokotoko1986/fast-excel-csv-converter.git
+   cd fast-excel-csv-converter
+   ```
+
+2. **実行ポリシーの設定**（必要に応じて）
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+3. **コンバーターの実行**
+   ```powershell
+   # .ps1ファイルを右クリックして「PowerShellで実行」を選択
+   # または PowerShell から実行：
+   .\Fast_Excel_CSV_Converter.ps1
+   ```
+
+4. **プロンプトに従って操作**
+   - Excelファイルが開いていないことを確認
+   - 変換したいExcelファイルを選択
+   - 魔法を見守る！ ✨
+
+### 📁 出力結果
+
+CSVファイルはタイムスタンプ付きフォルダに整理されます：
+```
+📂 20241215-143022/
+├── 📄 売上データ-シート1.csv
+├── 📄 売上データ-サマリー.csv
+├── 📄 在庫管理-商品.csv
+└── 📄 error.log (エラーが発生した場合)
+```
+
+### 🎯 パフォーマンス比較
+
+| ファイルサイズ | シート数 | 処理時間 | メモリ使用量 |
+|---------------|---------|---------|-------------|
+| 5MB | 3シート | ~15秒 | 少ない |
+| 50MB | 10シート | ~2分 | 中程度 |
+| 200MB以上 | 20シート以上 | ~8分 | 効率的なチャンク処理 |
+
+### 🧠 動作原理
+
+このツールは**洗練された3段階最適化戦略**を使用：
+
+1. **🔍 スマート分析** - データの複雑さを自動検出
+2. **⚡ 高速モード** - シンプルなデータ用（標準ツールの3-5倍高速）
+3. **🎯 精密モード** - フォーマット済みデータ用（視覚的精度を維持）
+4. **🔄 チャンクモード** - 大容量データセット用（メモリ効率重視）
+
+### 🛡️ 安全機能
+
+- **実行前警告** - Excelプロセス管理についての事前通知
+- **自動Excelクリーンアップ** - ハングプロセスを防止
+- **エラーログ** - トラブルシューティング用
+- **進捗追跡** - 長時間操作の進行状況表示
+- **グレースフル・デグラデーション** - 一部のファイルが失敗しても処理継続
+
+### 🤝 使用上の注意
+
+- **Excelが開いている場合は事前に閉じてください** - スクリプトが強制終了する可能性があります
+- **大容量ファイルの場合は時間がかかる場合があります** - 進捗バーで状況を確認できます
+- **エラーが発生した場合** - error.logファイルで詳細を確認できます
+
+---
 
 ## 🤝 Contributing
 
@@ -138,9 +249,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**⭐ If this tool saved you time, please give it a star! ⭐**
+**⭐ If this tool saved you time, please give it a star! ⭐**  
+**⭐ このツールで時間を節約できた場合は、ぜひスターをお願いします！ ⭐**
 
-Made with ❤️ for the data processing community
+Made with ❤️ for the data processing community  
+データ処理コミュニティのために ❤️ を込めて作成
 
 [Report Bug](https://github.com/yourusername/fast-excel-csv-converter/issues) • [Request Feature](https://github.com/yourusername/fast-excel-csv-converter/issues) • [View Releases](https://github.com/yourusername/fast-excel-csv-converter/releases)
 
