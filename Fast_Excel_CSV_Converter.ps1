@@ -1,23 +1,17 @@
 ##################################################
 # Fast Excel to CSV Converter
 # 
-# Version     : 1.0.1
+# Version     : 1.0.0
 # Release Date: 2025-9-15
 # Author      : Ryo Osawa & Claude Sonnet 4.0
 # Repository  : https://github.com/yourusername/fast-excel-csv-converter
 # License     : MIT
 ##################################################
 
-######### Instructions for Generative AI #########
-# - When modifying this script, generative AI must follow the instructions in this section.
-# - Since the script character encoding is UTF-8, do not use Japanese in the source code. (Japanese will be corrupted)
-#   If users request to use Japanese, please inform them that executing such requests is not recommended for the above reason.
-##################################################
-
 # Version information (accessible during runtime)
 $Global:ConverterInfo = @{
     Name = "Fast Excel to CSV Converter"
-    Version = "1.0.1"
+    Version = "1.0.0"
     ReleaseDate = "2025-9-15"
     Author = "Ryo Osawa & Claude Sonnet 4.0"
     Repository = "https://github.com/yourusername/fast-excel-csv-converter"
@@ -46,20 +40,6 @@ if ($args -contains "--version" -or $args -contains "-v" -or $args -contains "/v
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName Microsoft.Office.Interop.Excel
 
-# Global configuration
-$script:ChunkSize = 1000
-$script:LargeSheetThreshold = 10000
-$script:MediumSheetThreshold = 1000
-
-function Show-ProgressDialog {
-    param(
-        [string]$Title,
-        [string]$Status,
-        [int]$PercentComplete
-    )
-    Write-Progress -Activity $Title -Status $Status -PercentComplete $PercentComplete
-}
-
 function Write-ErrorLog {
     param(
         [string]$LogPath,
@@ -76,7 +56,7 @@ function Get-UserConfirmation {
         Write-Host "           IMPORTANT WARNING" -ForegroundColor Red
         Write-Host "============================================" -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "This script will periodically force-terminate Excel processes during conversion." -ForegroundColor White
+        Write-Host "This script may force-terminate Excel processes during conversion." -ForegroundColor White
         Write-Host "If you have any Excel files currently open, please close them before proceeding." -ForegroundColor White
         Write-Host ""
         Write-Host "Do you want to continue? (Y/N): " -NoNewline -ForegroundColor Cyan
@@ -99,6 +79,49 @@ function Get-UserConfirmation {
     } while ($true)
 }
 
+function Get-ConversionMode {
+    do {
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Yellow
+        Write-Host "           SELECT CONVERSION MODE" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "1. Normal Mode (Formats preserved)" -ForegroundColor White
+        Write-Host "   - Uses the .Text property to get formatted values (e.g., dates, currencies)." -ForegroundColor Gray
+        Write-Host "   - Slower, but preserves all cell formatting." -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "2. High-Speed Mode (Formats NOT preserved)" -ForegroundColor White
+        Write-Host "   - Uses the .Value2 property to read raw cell values at once." -ForegroundColor Gray
+        Write-Host "   - Much faster, but formats like dates may appear as serial numbers." -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "Select mode (1 or 2): " -NoNewline -ForegroundColor Cyan
+        
+        $response = Read-Host
+        
+        switch ($response) {
+            "1" { 
+                Write-Host ""
+                Write-Host "Selected mode: Normal (Formats preserved)" -ForegroundColor Green
+                return @{
+                    Mode = "Normal"
+                    Description = "Normal (Formats preserved)"
+                }
+            }
+            "2" { 
+                Write-Host ""
+                Write-Host "Selected mode: High-Speed (Formats NOT preserved)" -ForegroundColor Green
+                return @{
+                    Mode = "HighSpeed"
+                    Description = "High-Speed (Formats NOT preserved)"
+                }
+            }
+            default { 
+                Write-Host "Please enter '1' for Normal Mode or '2' for High-Speed Mode." -ForegroundColor Red
+            }
+        }
+    } while ($true)
+}
+
 function Get-CellValue {
     param($values, $row, $col, $rowCount, $colCount)
     
@@ -110,34 +133,6 @@ function Get-CellValue {
         return $values[$row] 
     } else { 
         return $values[$row, $col] 
-    }
-}
-
-function Get-CellFormat {
-    param($formats, $row, $col, $rowCount, $colCount)
-    
-    if ($rowCount -eq 1 -and $colCount -eq 1) { 
-        return $formats 
-    } elseif ($rowCount -eq 1) { 
-        return $formats[$col] 
-    } elseif ($colCount -eq 1) { 
-        return $formats[$row] 
-    } else { 
-        return $formats[$row, $col] 
-    }
-}
-
-function Get-CellText {
-    param($texts, $row, $col, $rowCount, $colCount)
-    
-    if ($rowCount -eq 1 -and $colCount -eq 1) { 
-        return $texts 
-    } elseif ($rowCount -eq 1) { 
-        return $texts[$col] 
-    } elseif ($colCount -eq 1) { 
-        return $texts[$row] 
-    } else { 
-        return $texts[$row, $col] 
     }
 }
 
@@ -153,265 +148,180 @@ function Format-CsvValue {
     return $valueStr
 }
 
-function Get-FirstDataRow {
-    param($values, $rowCount, $colCount)
+function Convert-SheetToCSV {
+    param($sheet, $sheetName, $conversionMode)
     
-    for ($row = 1; $row -le $rowCount; $row++) {
-        for ($col = 1; $col -le $colCount; $col++) {
-            $value = Get-CellValue $values $row $col $rowCount $colCount
-            if ($null -ne $value -and $value -ne "") {
-                return $row
-            }
-        }
-    }
-    return 1  # Default to first row if no data found
-}
-
-function Test-HasFormattedCells {
-    param($values, $formats, $rowCount, $colCount)
-    
-    if ($null -eq $formats) { return $false }
-    
-    # Find first data row to start sampling from actual data
-    $firstDataRow = Get-FirstDataRow $values $rowCount $colCount
-    
-    # Dynamic sample size based on column count (columns × 10)
-    $sampleSize = $colCount * 10
-    
-    # Calculate rows to sample (maximum 10 rows from first data row)
-    $dataRowCount = $rowCount - $firstDataRow + 1
-    $rowsToSample = [Math]::Min(10, $dataRowCount)
-    
-    Write-Host "      Sampling from row $firstDataRow, checking up to $sampleSize cells" -ForegroundColor Gray
-    
-    # For small datasets, check all cells
-    $totalCells = $rowCount * $colCount
-    if ($totalCells -le $sampleSize) {
-        if ($rowCount -eq 1 -and $colCount -eq 1) {
-            $format = $formats
-            return ($format -ne "General" -and $format -ne "@")
-        } elseif ($rowCount -eq 1) {
-            return ($formats | Where-Object { $_ -ne "General" -and $_ -ne "@" }).Count -gt 0
-        } elseif ($colCount -eq 1) {
-            return ($formats | Where-Object { $_ -ne "General" -and $_ -ne "@" }).Count -gt 0
-        } else {
-            for ($row = 1; $row -le $rowCount; $row++) {
-                for ($col = 1; $col -le $colCount; $col++) {
-                    $format = $formats[$row, $col]
-                    if ($format -ne "General" -and $format -ne "@") {
-                        return $true
-                    }
-                }
-            }
-            return $false
-        }
+    # Get the last cell with data using SpecialCells
+    try {
+        $lastCell = $sheet.Cells.SpecialCells([Microsoft.Office.Interop.Excel.XlCellType]::xlCellTypeLastCell)
+        $maxRow = $lastCell.Row
+        $maxCol = $lastCell.Column
+    } catch {
+        # SpecialCells throws exception if no data exists in the sheet
+        Write-Host "    Empty sheet - creating empty CSV" -ForegroundColor Gray
+        return @()
     }
     
-    # For large datasets, use improved sampling starting from first data row
-    $sampleCount = 0
-    $actualDataSamples = 0
-    
-    for ($row = $firstDataRow; $row -lt ($firstDataRow + $rowsToSample) -and $row -le $rowCount; $row++) {
-        for ($col = 1; $col -le $colCount -and $sampleCount -lt $sampleSize; $col++) {
-            # Get cell value to check if it contains data
-            $value = Get-CellValue $values $row $col $rowCount $colCount
-            
-            # Skip empty cells (don't count towards sample)
-            if ($null -eq $value -or $value -eq "") {
-                continue
-            }
-            
-            $actualDataSamples++
-            $format = Get-CellFormat $formats $row $col $rowCount $colCount
-            if ($format -ne "General" -and $format -ne "@") {
-                Write-Host "      Formatted cells detected (sampled $actualDataSamples data cells)" -ForegroundColor Gray
-                return $true
-            }
-            $sampleCount++
-        }
-    }
-    
-    Write-Host "      No formatted cells found (sampled $actualDataSamples data cells)" -ForegroundColor Gray
-    return $false
-}
-
-function Convert-SimpleValues {
-    param($values, $rowCount, $colCount)
+    Write-Host "    Processing range: A1 to $($sheet.Cells($maxRow, $maxCol).Address(0, 0))" -ForegroundColor Gray
+    Write-Host "    Processing cell by cell using $($conversionMode.Description) mode..." -ForegroundColor Cyan
     
     $csvContent = @()
     
-    for ($row = 1; $row -le $rowCount; $row++) {
+    for ($row = 1; $row -le $maxRow; $row++) {
         $rowData = @()
-        for ($col = 1; $col -le $colCount; $col++) {
-            $cellValue = Get-CellValue $values $row $col $rowCount $colCount
-            $rowData += Format-CsvValue $cellValue
+        
+        for ($col = 1; $col -le $maxCol; $col++) {
+            # Get individual cell text (using .Text property for format preservation)
+            $cellText = $sheet.Cells($row, $col).Text
+            $rowData += Format-CsvValue $cellText
         }
+        
         $csvContent += ($rowData -join ',')
     }
     
+    Write-Host "    Processed $maxRow rows, $maxCol columns" -ForegroundColor Gray
     return $csvContent
 }
 
-function Convert-WithFormatCheck {
-    param($sheet, $usedRange, $values, $formats, $texts)
-    
-    $rowCount = $usedRange.Rows.Count
-    $colCount = $usedRange.Columns.Count
-    $csvContent = @()
-    
-    for ($row = 1; $row -le $rowCount; $row++) {
-        $rowData = @()
-        for ($col = 1; $col -le $colCount; $col++) {
-            $cellValue = Get-CellValue $values $row $col $rowCount $colCount
-            
-            if ($null -eq $cellValue -or $cellValue -eq "") {
-                $rowData += ""
-                continue
-            }
-            
-            $cellFormat = Get-CellFormat $formats $row $col $rowCount $colCount
-            
-            # Use formatted text for non-General formats or when display differs from value
-            if ($cellFormat -ne "General" -and $cellFormat -ne "@") {
-                $cellText = Get-CellText $texts $row $col $rowCount $colCount
-                if (-not [string]::IsNullOrEmpty($cellText)) {
-                    $cellValue = $cellText
-                }
-            } elseif ($cellValue -is [double]) {
-                $cellText = Get-CellText $texts $row $col $rowCount $colCount
-                if ($cellValue.ToString() -ne $cellText -and -not [string]::IsNullOrEmpty($cellText)) {
-                    $cellValue = $cellText
-                }
-            }
-            
-            $rowData += Format-CsvValue $cellValue
-        }
-        $csvContent += ($rowData -join ',')
-    }
-    
-    return $csvContent
-}
-
-function Convert-LargeSheetToCSV {
-    param($sheet, $chunkSize = 1000)
-    
-    # Get the maximum used row and column from the sheet
-    $maxRow = $sheet.UsedRange.Row + $sheet.UsedRange.Rows.Count - 1
-    $maxCol = $sheet.UsedRange.Column + $sheet.UsedRange.Columns.Count - 1
-    
-    # Always start from A1 (row 1, column 1) to preserve blank rows/columns
-    $totalRowCount = $maxRow
-    $totalColCount = $maxCol
-    $csvContent = @()
-    
-    Write-Host "    Processing large sheet in chunks (preserving blanks from A1)..." -ForegroundColor Yellow
-    Write-Host "    Sheet range: A1 to $($sheet.Cells($maxRow, $maxCol).Address(0, 0))" -ForegroundColor Gray
-    
-    for ($startRow = 1; $startRow -le $totalRowCount; $startRow += $chunkSize) {
-        $endRow = [Math]::Min($startRow + $chunkSize - 1, $totalRowCount)
-        $chunkRowCount = $endRow - $startRow + 1
-        
-        # Define chunk range from A1 origin (not UsedRange relative)
-        $chunkRange = $sheet.Range(
-            $sheet.Cells($startRow, 1),
-            $sheet.Cells($endRow, $totalColCount)
-        )
-        
-        # Get chunk data
-        $chunkValues = $chunkRange.Value2
-        $chunkFormats = $chunkRange.NumberFormat
-        
-        # Check if chunk has formatted cells using improved sampling
-        $hasFormattedCells = Test-HasFormattedCells $chunkValues $chunkFormats $chunkRowCount $totalColCount
-        
-        if (-not $hasFormattedCells) {
-            # Fast processing for chunk
-            $chunkContent = Convert-SimpleValues $chunkValues $chunkRowCount $totalColCount
-        } else {
-            # Standard processing for chunk
-            $chunkTexts = $chunkRange.Text
-            $chunkContent = Convert-WithFormatCheck $sheet $chunkRange $chunkValues $chunkFormats $chunkTexts
-        }
-        
-        $csvContent += $chunkContent
-        
-        # Progress update
-        $progress = [Math]::Round(($endRow / $totalRowCount) * 100)
-        Write-Progress -Activity "Processing large sheet" -Status "Chunk: $endRow/$totalRowCount rows" -PercentComplete $progress
-        
-        # Memory cleanup
-        [System.GC]::Collect()
-    }
-    
-    return $csvContent
-}
-
-function Convert-SheetToCSV-Optimized {
+function Convert-SheetToCSV-Fast {
     param($sheet, $sheetName)
     
+    Write-Host "    Processing using High-Speed mode (UsedRange + Value2)..." -ForegroundColor Cyan
+    
+    # Get UsedRange
     $usedRange = $sheet.UsedRange
-    if (-not $usedRange) { 
-        Write-Host "    Empty sheet - creating empty CSV" -ForegroundColor Gray
-        return @() 
+    
+    # Handle completely empty sheets
+    if (-not $usedRange) {
+        Write-Host "    Completely empty sheet - creating single empty cell CSV" -ForegroundColor Gray
+        return @("")
     }
     
-    # Calculate full sheet dimensions from A1
-    $maxRow = $usedRange.Row + $usedRange.Rows.Count - 1
-    $maxCol = $usedRange.Column + $usedRange.Columns.Count - 1
-    $rowCount = $maxRow
-    $colCount = $maxCol
-    $cellCount = $rowCount * $colCount
+    # Get UsedRange boundaries
+    $startRow = $usedRange.Row
+    $startCol = $usedRange.Column
+    $endRow = $startRow + $usedRange.Rows.Count - 1
+    $endCol = $startCol + $usedRange.Columns.Count - 1
     
-    Write-Host "    Sheet size: A1 to $($sheet.Cells($maxRow, $maxCol).Address(0, 0)) ($cellCount cells)" -ForegroundColor Gray
+    # Complete range always starts from A1
+    $fullStartRow = 1
+    $fullStartCol = 1
+    $fullEndRow = $endRow
+    $fullEndCol = $endCol
     
-    # Determine processing strategy based on size
-    if ($cellCount -gt $script:LargeSheetThreshold) {
-        Write-Host "    Strategy: Chunk processing (large dataset)" -ForegroundColor Cyan
-        return Convert-LargeSheetToCSV $sheet $script:ChunkSize
+    Write-Host "    UsedRange: $($sheet.Cells($startRow, $startCol).Address(0, 0)) to $($sheet.Cells($endRow, $endCol).Address(0, 0))" -ForegroundColor Gray
+    Write-Host "    Full range: A1 to $($sheet.Cells($fullEndRow, $fullEndCol).Address(0, 0))" -ForegroundColor Gray
+    
+    # Get all values from UsedRange using Value2 for high performance
+    $values = $usedRange.Value2
+    
+    # Determine if we have array or single value
+    $isArray = $values -is [System.Array]
+    $usedRowCount = $usedRange.Rows.Count
+    $usedColCount = $usedRange.Columns.Count
+    
+    # Debug: Check actual array dimensions
+    $arrayDimension = "N/A"
+    $actualArrayLength = "N/A"
+    if ($isArray) {
+        $arrayDimension = $values.Rank
+        if ($values.Rank -eq 1) {
+            $actualArrayLength = $values.Length
+        } else {
+            $actualArrayLength = "$($values.GetLength(0))x$($values.GetLength(1))"
+        }
     }
     
-    # For medium and small sheets, get full range from A1
-    $fullRange = $sheet.Range($sheet.Cells(1, 1), $sheet.Cells($maxRow, $maxCol))
-    $values = $fullRange.Value2
+    Write-Host "    Processing $fullEndRow rows, $fullEndCol columns (UsedRange: $usedRowCount x $usedColCount)" -ForegroundColor Gray
+    Write-Host "    Array info: IsArray=$isArray, Dimension=$arrayDimension, Length=$actualArrayLength" -ForegroundColor Gray
     
-    if ($cellCount -gt $script:MediumSheetThreshold) {
-        Write-Host "    Strategy: Analyzing formats with improved sampling..." -ForegroundColor Cyan
-        $formats = $fullRange.NumberFormat
-        $hasFormattedCells = Test-HasFormattedCells $values $formats $rowCount $colCount
-    } else {
-        Write-Host "    Strategy: Standard processing (small dataset)" -ForegroundColor Cyan
-        $hasFormattedCells = $true  # Safe fallback for small sheets
+    $csvContent = @()
+    
+    # Process each row from A1 to full range
+    for ($row = $fullStartRow; $row -le $fullEndRow; $row++) {
+        $rowData = @()
+        
+        for ($col = $fullStartCol; $col -le $fullEndCol; $col++) {
+            $cellValue = $null
+            
+            # Check if current cell is within UsedRange
+            if ($row -ge $startRow -and $row -le $endRow -and $col -ge $startCol -and $col -le $endCol) {
+                # Within UsedRange - get actual data
+                if ($isArray) {
+                    # Calculate array indices (1-based)
+                    $arrayRow = $row - $startRow + 1
+                    $arrayCol = $col - $startCol + 1
+                    
+                    try {
+                        if ($usedRowCount -eq 1 -and $usedColCount -eq 1) {
+                            # Single cell case - but returned as array somehow
+                            $cellValue = $values[1]
+                        } elseif ($usedRowCount -eq 1) {
+                            # Single row, multiple columns - 1D array indexed by column
+                            $cellValue = $values[$arrayCol]
+                        } elseif ($usedColCount -eq 1) {
+                            # Multiple rows, single column - 1D array indexed by row
+                            $cellValue = $values[$arrayRow]
+                        } else {
+                            # Multiple rows and columns - 2D array
+                            $cellValue = $values[$arrayRow, $arrayCol]
+                        }
+                    } catch {
+                        # Fallback: try different access patterns
+                        try {
+                            if ($values.Rank -eq 1) {
+                                # 1D array - use linear index
+                                $linearIndex = ($arrayRow - 1) * $usedColCount + $arrayCol
+                                $cellValue = $values[$linearIndex]
+                            } else {
+                                # 2D array - use standard indexing
+                                $cellValue = $values[$arrayRow, $arrayCol]
+                            }
+                        } catch {
+                            Write-Host "      Warning: Could not access array at [$arrayRow, $arrayCol], using null" -ForegroundColor Yellow
+                            $cellValue = $null
+                        }
+                    }
+                } else {
+                    # Single cell in UsedRange
+                    $cellValue = $values
+                }
+            } else {
+                # Outside UsedRange (leading empty rows/columns) - use empty value
+                $cellValue = $null
+            }
+            
+            $rowData += Format-CsvValue $cellValue
+        }
+        
+        $csvContent += ($rowData -join ',')
     }
     
-    if (-not $hasFormattedCells) {
-        Write-Host "    Mode: Fast processing (no formatted cells detected)" -ForegroundColor Green
-        return Convert-SimpleValues $values $rowCount $colCount
-    } else {
-        Write-Host "    Mode: Standard processing (formatted cells detected)" -ForegroundColor Yellow
-        $formats = if ($cellCount -gt $script:MediumSheetThreshold) { $formats } else { $fullRange.NumberFormat }
-        $texts = $fullRange.Text
-        return Convert-WithFormatCheck $sheet $fullRange $values $formats $texts
-    }
+    Write-Host "    Processed $fullEndRow rows, $fullEndCol columns" -ForegroundColor Gray
+    return $csvContent
 }
 
 try {
     # Display welcome banner
     Write-Host ""
     Write-Host "=== $($Global:ConverterInfo.Name) v$($Global:ConverterInfo.Version) ===" -ForegroundColor Cyan
-    Write-Host "High-performance Excel to CSV conversion with intelligent optimization" -ForegroundColor Gray
+    Write-Host "Excel to CSV conversion with format preservation" -ForegroundColor Gray
     Write-Host ""
 
     # Error tracking variable
     $script:HasErrors = $false
 
-    # 0. User confirmation before processing
+    # User confirmation before processing
     if (-not (Get-UserConfirmation)) {
         Write-Host "Script execution terminated." -ForegroundColor Yellow
         Read-Host "Press Enter to exit"
         exit 1
     }
 
-    # 1. Excel file selection dialog
+    # Get conversion mode selection
+    $conversionMode = Get-ConversionMode
+
+    # Excel file selection dialog
     $fileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $fileDialog.Title = "Select Excel files to convert"
     $fileDialog.Filter = "Excel Files (*.xls;*.xlsx;*.xlsm)|*.xls;*.xlsx;*.xlsm"
@@ -426,7 +336,7 @@ try {
         exit 1
     }
 
-    # 2. Create output folder
+    # Create output folder
     $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $outputFolder = Join-Path $scriptPath $timestamp
@@ -447,12 +357,6 @@ try {
 
     $totalFiles = $selectedFiles.Count
     $currentFileIndex = 0
-    $performanceStats = @{
-        FastModeSheets = 0
-        StandardModeSheets = 0
-        ChunkModeSheets = 0
-        TotalProcessingTime = 0
-    }
 
     $overallStartTime = Get-Date
 
@@ -460,9 +364,7 @@ try {
         $currentFileIndex++
         $fileName = [System.IO.Path]::GetFileNameWithoutExtension($filePath)
         
-        Show-ProgressDialog -Title "Converting Excel to CSV (Optimized)" -Status "Processing: $fileName ($currentFileIndex/$totalFiles)" -PercentComplete (($currentFileIndex - 1) / $totalFiles * 100)
-        
-        Write-Host "`nProcessing: $fileName" -ForegroundColor Cyan
+        Write-Host "`nProcessing: $fileName ($currentFileIndex/$totalFiles)" -ForegroundColor Cyan
 
         try {
             $fileStartTime = Get-Date
@@ -476,16 +378,24 @@ try {
                 $sheetName = $sheet.Name
                 
                 $safeSheetName = $sheetName -replace '[\\/:*?"<>|]', '_'
-                $csvFileName = "$fileName-$safeSheetName.csv"
+                
+                # Add mode suffix to filename
+                $modeSuffix = if ($conversionMode.Mode -eq "Normal") { "-normal" } else { "-highspeed" }
+                $csvFileName = "$fileName-$safeSheetName$modeSuffix.csv"
                 $csvFilePath = Join-Path $outputFolder $csvFileName
                 
-                Show-ProgressDialog -Title "Converting Excel to CSV (Optimized)" -Status "Processing: $fileName - $sheetName ($currentSheetIndex/$totalSheets)" -PercentComplete (($currentFileIndex - 1) / $totalFiles * 100 + ($currentSheetIndex / $totalSheets) / $totalFiles * 100)
-                
-                Write-Host "  Sheet: $sheetName -> $csvFileName" -ForegroundColor White
+                Write-Host "  Sheet: $sheetName -> $csvFileName ($currentSheetIndex/$totalSheets)" -ForegroundColor White
                 
                 try {
                     $sheetStartTime = Get-Date
-                    $csvContent = Convert-SheetToCSV-Optimized $sheet $sheetName
+                    
+                    # Choose conversion method based on mode
+                    if ($conversionMode.Mode -eq "Normal") {
+                        $csvContent = Convert-SheetToCSV $sheet $sheetName $conversionMode
+                    } else {
+                        $csvContent = Convert-SheetToCSV-Fast $sheet $sheetName
+                    }
+                    
                     $sheetEndTime = Get-Date
                     $sheetProcessingTime = ($sheetEndTime - $sheetStartTime).TotalSeconds
                     
@@ -522,7 +432,7 @@ try {
 } finally {
     Write-Host "`nStarting cleanup process..." -ForegroundColor Yellow
     
-    # 1. Close any open workbooks
+    # Close any open workbooks
     if ($script:workbook) {
         try {
             Write-Host "Closing workbook..." -ForegroundColor Gray
@@ -534,7 +444,7 @@ try {
         $script:workbook = $null
     }
     
-    # 2. Store Excel process IDs before termination attempt
+    # Store Excel process IDs before termination attempt
     $preExcelProcesses = @()
     try {
         $preExcelProcesses = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue | Select-Object Id, ProcessName
@@ -543,7 +453,7 @@ try {
         # No Excel processes found or error getting process list
     }
     
-    # 3. Terminate Excel application properly
+    # Terminate Excel application properly
     if ($script:excel) {
         try {
             Write-Host "Closing Excel application..." -ForegroundColor Gray
@@ -567,16 +477,16 @@ try {
         $script:excel = $null
     }
     
-    # 4. Force garbage collection
+    # Force garbage collection
     Write-Host "Forcing garbage collection..." -ForegroundColor Gray
     [System.GC]::Collect()
     [System.GC]::WaitForPendingFinalizers()
     [System.GC]::Collect()
     
-    # 5. Wait a moment for processes to terminate naturally
+    # Wait a moment for processes to terminate naturally
     Start-Sleep -Seconds 2
     
-    # 6. Check remaining Excel processes and force terminate if necessary
+    # Check remaining Excel processes and force terminate if necessary
     try {
         $postExcelProcesses = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
         
@@ -610,9 +520,6 @@ try {
     } catch {
         Write-Host "Error checking Excel processes: $($_.Exception.Message)" -ForegroundColor Red
     }
-    
-    # 7. Hide progress bar
-    Write-Progress -Activity "Converting Excel to CSV (Optimized)" -Completed
     
     Write-Host "Cleanup process completed." -ForegroundColor Green
 }
