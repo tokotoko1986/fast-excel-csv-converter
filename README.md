@@ -252,9 +252,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **⭐ If this tool saved you time, please give it a star! ⭐**  
 **⭐ このツールで時間を節約できた場合は、ぜひスターをお願いします！ ⭐**
 
-Made with ❤️ for the data processing community  
-データ処理コミュニティのために ❤️ を込めて作成
-
-[Report Bug](https://github.com/yourusername/fast-excel-csv-converter/issues) • [Request Feature](https://github.com/yourusername/fast-excel-csv-converter/issues) • [View Releases](https://github.com/yourusername/fast-excel-csv-converter/releases)
-
 </div>
