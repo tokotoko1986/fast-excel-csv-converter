@@ -1,5 +1,4 @@
 # ⚡ Fast Excel CSV Converter
-
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
@@ -10,329 +9,235 @@
 ---
 
 ## 🌍 Language / 言語選択
-
 - [English](#english) | [日本語](#japanese)
 
 ---
 
-## English
+<a name="english"></a>
+# 📖 English
 
-### ✨ Why This Tool?
+## ✨ Features
 
-Unlike other converters (including popular tools like MarkItDown), this tool ensures **pixel-perfect accuracy**:
+### 🎯 **Dual Conversion Modes**
+- **Normal Mode**: Preserves all cell formatting (dates, currencies, percentages)
+- **High-Speed Mode**: Ultra-fast conversion using raw values (up to 10x faster)
 
-| Other Tools | This Tool |
-|------------|-----------|
-| `0.25` | `25%` ✅ |
-| `44927` | `2023/1/1` ✅ |
-| `1000` | `¥1,000` ✅ |
+### 📊 **Smart Processing**
+- **Batch Processing**: Convert multiple Excel files at once
+- **All Sheet Support**: Automatically converts all sheets in each workbook
+- **Empty Sheet Handling**: Gracefully handles empty worksheets
+- **Error Recovery**: Continues processing even if individual files fail
 
-### 🌟 Key Features
+### 🛡️ **Robust & Safe**
+- **Process Management**: Automatically handles Excel process cleanup
+- **Error Logging**: Detailed error logs for troubleshooting
+- **User Confirmation**: Safety prompts before processing
+- **File Format Support**: Works with .xls, .xlsx, and .xlsm files
 
-- 🎯 **Dual Processing Modes** - Choose between Normal (format-preserving) and High-Speed modes
-- ⚡ **Intelligent Optimization** - Automatically selects the best processing strategy
-- 📊 **Format Preservation** - Maintains dates, percentages, currency as displayed in Excel
-- 📄 **Batch Processing** - Convert multiple Excel files at once
-- 💾 **Memory Efficient** - Handles large files with optimized processing
-- 🛡️ **Safe Execution** - Proper Excel process management and cleanup
-- 🌍 **UTF-8 Support** - Perfect for international characters
+## 🚀 Quick Start
 
-### 🚀 Quick Start
-
-#### Prerequisites
+### Prerequisites
 - Windows OS
 - Microsoft Excel installed
 - PowerShell 5.1 or later
 
-#### Installation & Usage
+### Installation
+1. Download `Fast_Excel_CSV_Converter.ps1`
+2. Place it in your desired directory
+3. Right-click and "Run with PowerShell" or execute via command line
 
-1. **Download the script**
-   ```bash
-   # Clone this repository
-   git clone https://github.com/yourusername/fast-excel-csv-converter.git
-   cd fast-excel-csv-converter
-   ```
+### Basic Usage
+```powershell
+# Run the converter
+.\Fast_Excel_CSV_Converter.ps1
 
-2. **Set execution policy** (if needed)
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-
-3. **Run the converter**
-   ```powershell
-   # Right-click on the .ps1 file and select "Run with PowerShell"
-   # OR run from PowerShell:
-   .\Fast_Excel_CSV_Converter.ps1
-   ```
-
-4. **Follow the interactive prompts**
-   - Confirm that no Excel files are open
-   - Select processing mode (Normal or High-Speed)
-   - Choose Excel files to convert
-   - Watch the conversion happen!
-
-### 🎮 Processing Modes
-
-#### Normal Mode (Formats Preserved)
-- Uses Excel's `.Text` property to maintain formatting
-- Perfect for financial data, dates, and custom number formats
-- Preserves exactly what you see in Excel
-- Output files: `filename-sheetname-normal.csv`
-
-#### High-Speed Mode (Raw Values)
-- Uses Excel's `.Value2` property for maximum performance
-- Up to 100x faster for large datasets
-- Dates appear as serial numbers, currencies as plain numbers
-- Output files: `filename-sheetname-highspeed.csv`
-
-### 📁 Output Structure
-
-Your CSV files will be organized in a timestamped folder:
-```
-📂 20241215-143022/
-├── 📄 SalesData-Sheet1-normal.csv
-├── 📄 SalesData-Summary-normal.csv
-├── 📄 Inventory-Products-highspeed.csv
-└── 📄 error.log (if any issues occurred)
+# Check version
+.\Fast_Excel_CSV_Converter.ps1 --version
 ```
 
-### 🎯 Performance Comparison
+## 💡 How It Works
 
-| File Size | Processing Mode | Time | Memory Usage |
-|-----------|----------------|------|--------------|
-| Small (< 1K cells) | Normal | 0.5s | Low |
-| Small (< 1K cells) | High-Speed | 0.1s | Low |
-| Medium (1K-10K cells) | Normal | 5s | Moderate |
-| Medium (1K-10K cells) | High-Speed | 0.5s | Moderate |
-| Large (> 10K cells) | Normal | 60s | High |
-| Large (> 10K cells) | High-Speed | 0.6s | Efficient |
+### Step-by-Step Process
+1. **File Selection**: Choose Excel files using the built-in file dialog
+2. **Mode Selection**: Choose between Normal (formatted) or High-Speed (raw) conversion
+3. **Safety Check**: Confirm before processing begins
+4. **Batch Conversion**: All selected files and their sheets are processed
+5. **Output Organization**: Results saved in timestamped folders
 
-### 🔧 Advanced Features
-
-#### Range Preservation
-- Maintains leading empty rows and columns from A1
-- Preserves complete worksheet structure
-- Handles mixed data ranges accurately
-
-#### Error Handling
-- Continues processing on individual sheet failures
-- Detailed error logging with timestamps
-- Graceful handling of corrupted files
-
-#### Memory Management
-- Automatic garbage collection
-- Excel COM object cleanup
-- Process termination safety
-
-### 🛡️ Safety Features
-
-- **Pre-execution warning** about Excel process management
-- **Automatic Excel cleanup** prevents hanging processes
-- **Error logging** for troubleshooting
-- **Progress tracking** for long operations
-- **Graceful degradation** continues processing even if some files fail
-
----
-
-## Japanese
-
-### ✨ なぜこのツールなのか？
-
-他のコンバーター（MarkItDownを含む）とは異なり、このツールは**完璧な精度**を保証します：
-
-| 他のツール | このツール |
-|------------|-----------|
-| `0.25` | `25%` ✅ |
-| `44927` | `2023/1/1` ✅ |
-| `1000` | `¥1,000` ✅ |
-
-### 🌟 主な機能
-
-- 🎯 **デュアル処理モード** - ノーマル（書式保持）とハイスピードモードから選択
-- ⚡ **インテリジェント最適化** - 最適な処理戦略を自動選択
-- 📊 **フォーマット保持** - Excelで表示されている通りの日付、パーセント、通貨を維持
-- 📄 **バッチ処理** - 複数のExcelファイルを一度に変換
-- 💾 **メモリ効率** - 最適化された処理で大容量ファイルにも対応
-- 🛡️ **安全実行** - 適切なExcelプロセス管理とクリーンアップ
-- 🌍 **UTF-8対応** - 日本語などの国際文字も完璧にサポート
-
-### 🚀 クイックスタート
-
-#### 前提条件
-- Windows OS
-- Microsoft Excel がインストール済み
-- PowerShell 5.1 以上
-
-#### インストール＆使用方法
-
-1. **スクリプトのダウンロード**
-   ```bash
-   # このリポジトリをクローン
-   git clone https://github.com/yourusername/fast-excel-csv-converter.git
-   cd fast-excel-csv-converter
-   ```
-
-2. **実行ポリシーの設定**（必要に応じて）
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-
-3. **コンバーターの実行**
-   ```powershell
-   # .ps1ファイルを右クリックして「PowerShellで実行」を選択
-   # または PowerShell から実行：
-   .\Fast_Excel_CSV_Converter.ps1
-   ```
-
-4. **インタラクティブプロンプトに従って操作**
-   - Excelファイルが開いていないことを確認
-   - 処理モード（ノーマルまたはハイスピード）を選択
-   - 変換したいExcelファイルを選択
-   - 変換処理を確認！
-
-### 🎮 処理モード
-
-#### ノーマルモード（書式保持）
-- Excelの `.Text` プロパティを使用して書式を維持
-- 財務データ、日付、カスタム数値書式に最適
-- Excelで表示されている内容を正確に保持
-- 出力ファイル: `ファイル名-シート名-normal.csv`
-
-#### ハイスピードモード（生の値）
-- Excelの `.Value2` プロパティを使用して最大パフォーマンスを実現
-- 大きなデータセットで最大100倍高速
-- 日付はシリアル番号、通貨は単純な数値として表示
-- 出力ファイル: `ファイル名-シート名-highspeed.csv`
-
-### 📁 出力構造
-
-CSVファイルはタイムスタンプ付きフォルダに整理されます：
+### Output Structure
 ```
-📂 20241215-143022/
-├── 📄 売上データ-シート1-normal.csv
-├── 📄 売上データ-サマリー-normal.csv
-├── 📄 在庫管理-商品-highspeed.csv
-└── 📄 error.log (エラーが発生した場合)
+📁 YourDirectory/
+├── 📄 Fast_Excel_CSV_Converter.ps1
+└── 📁 20250916-143052/  (timestamp folder)
+    ├── 📄 File1-Sheet1-normal.csv
+    ├── 📄 File1-Sheet2-normal.csv
+    ├── 📄 File2-Data-highspeed.csv
+    └── 📄 error.log (if errors occurred)
 ```
 
-### 🎯 パフォーマンス比較
+## 🔧 Advanced Options
 
-| ファイルサイズ | 処理モード | 時間 | メモリ使用量 |
-|---------------|---------|------|-------------|
-| 小（< 1Kセル） | ノーマル | 0.5秒 | 少ない |
-| 小（< 1Kセル） | ハイスピード | 0.1秒 | 少ない |
-| 中（1K-10Kセル） | ノーマル | 5秒 | 中程度 |
-| 中（1K-10Kセル） | ハイスピード | 0.5秒 | 中程度 |
-| 大（> 10Kセル） | ノーマル | 60秒 | 高い |
-| 大（> 10Kセル） | ハイスピード | 0.6秒 | 効率的 |
+### Conversion Modes Comparison
+| Feature | Normal Mode | High-Speed Mode |
+|---------|-------------|-----------------|
+| **Speed** | Standard | Up to 10x faster |
+| **Formatting** | ✅ Preserved | ❌ Raw values only |
+| **Dates** | ✅ Human readable | ❌ Serial numbers |
+| **Currency** | ✅ With symbols | ❌ Numbers only |
+| **Best for** | Final reports, presentations | Data analysis, bulk processing |
 
-### 🔧 高度な機能
+### Command Line Options
+```powershell
+# Display version information
+.\Fast_Excel_CSV_Converter.ps1 --version
+.\Fast_Excel_CSV_Converter.ps1 -v
+.\Fast_Excel_CSV_Converter.ps1 /version
+```
 
-#### 範囲保持
-- A1からの先頭空白行・列を維持
-- 完全なワークシート構造を保持
-- 混在データ範囲を正確に処理
+## 🛠️ Troubleshooting
 
-#### エラーハンドリング
-- 個別シート失敗時も処理継続
-- タイムスタンプ付き詳細エラーログ
-- 破損ファイルの適切な処理
+### Common Issues
+- **"Excel process still running"**: The script automatically handles process cleanup
+- **File access denied**: Ensure Excel files are closed before conversion
+- **Large files taking too long**: Use High-Speed mode for better performance
+- **Encoding issues**: Output uses UTF-8 encoding by default
 
-#### メモリ管理
-- 自動ガベージコレクション
-- Excel COMオブジェクトクリーンアップ
-- プロセス終了安全性
+### Error Logs
+Check the `error.log` file in the output directory for detailed error information.
 
-### 🛡️ 安全機能
-
-- **実行前警告** - Excelプロセス管理についての事前通知
-- **自動Excelクリーンアップ** - ハングプロセスを防止
-- **エラーログ** - トラブルシューティング用
-- **進捗追跡** - 長時間操作の進行状況表示
-- **グレースフル・デグラデーション** - 一部のファイルが失敗しても処理継続
-
----
-
-## 🎨 Use Cases
-
-### Business & Finance
-- **Financial Reports** - Preserve currency formatting and calculations
-- **Accounting Data** - Maintain date formats and decimal precision
-- **Budget Analysis** - Keep percentage and custom number formats
-
-### Data Analysis
-- **Large Datasets** - Use High-Speed mode for rapid processing
-- **Research Data** - Maintain data integrity with Normal mode
-- **Survey Results** - Preserve formatting while enabling CSV analysis
-
-### System Integration
-- **Data Migration** - Convert legacy Excel files to CSV for new systems
-- **Batch Processing** - Convert multiple files for automated workflows
-- **Archive Conversion** - Transform Excel archives to accessible CSV format
-
-## 🔍 Technical Highlights
-
-### Intelligent Processing Engine
-- **Automatic Mode Selection** based on data characteristics
-- **Memory-Efficient Algorithms** for large file handling
-- **COM Object Management** prevents Excel process issues
-
-### Advanced Range Detection
-- **Leading Blank Preservation** maintains worksheet structure
-- **Mixed Data Handling** processes sparse datasets efficiently
-- **Array Dimension Management** handles various Excel data structures
-
-### Error Recovery System
-- **Multi-Level Error Handling** continues processing despite failures
-- **Comprehensive Logging** provides detailed troubleshooting information
-- **Safe Cleanup Procedures** ensure system stability
+## 📋 System Requirements
+- **OS**: Windows 7/8/10/11
+- **PowerShell**: Version 5.1 or later
+- **Excel**: Microsoft Excel (any recent version)
+- **Memory**: Depends on file size (recommend 4GB+ RAM for large files)
 
 ## 🤝 Contributing
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Development Guidelines
-- **Keep it simple** - this tool prioritizes simplicity over feature bloat
-- **Maintain backward compatibility** with existing PowerShell versions
-- **Test with various Excel file types** (.xls, .xlsx, .xlsm)
-- **Document any changes** with clear commit messages
-- **Follow the established error handling patterns**
-
-### Reporting Issues
-When reporting bugs, please include:
-- PowerShell version (`$PSVersionTable.PSVersion`)
-- Excel version and architecture (32-bit/64-bit)
-- Sample file characteristics (size, complexity, format)
-- Full error message from error.log
-- Steps to reproduce the issue
-
-## 🚀 Roadmap
-
-Future enhancements being considered:
-- **Parallel processing** for multiple worksheets
-- **Advanced filtering options** for specific sheets/ranges
-- **Configuration file support** for enterprise deployments
-- **PowerShell Core support** for cross-platform compatibility
-- **Plugin architecture** for custom output formats
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with **PowerShell** and **Excel COM Interop**
-- Inspired by the need for **accurate Excel-to-CSV conversion**
-- Special thanks to the **PowerShell community** for best practices
-- **Claude Sonnet 4.0** for development assistance and optimization strategies
+## 👨‍💻 Authors
+- **Ryo Osawa** - *Initial work*
+- **Claude Sonnet 4.0** - *AI Assistant*
 
 ---
 
-<div align="center">
+<a name="japanese"></a>
+# 📖 日本語
 
-**⭐ If this tool saved you time, please give it a star! ⭐**  
-**⭐ このツールで時間を節約できた場合は、ぜひスターをお願いします！ ⭐**
+## ✨ 機能
 
-**Made with ⚡ for high-performance Excel processing**
+### 🎯 **2つの変換モード**
+- **ノーマルモード**: セルの書式を完全保持（日付、通貨、パーセンテージ）
+- **高速モード**: 生の値を使用した超高速変換（最大10倍高速）
 
-</div>
+### 📊 **スマート処理**
+- **バッチ処理**: 複数のExcelファイルを一度に変換
+- **全シート対応**: ワークブック内の全シートを自動変換
+- **空シート処理**: 空のワークシートも適切に処理
+- **エラー復旧**: 個別ファイルが失敗しても処理を継続
+
+### 🛡️ **堅牢で安全**
+- **プロセス管理**: Excelプロセスの自動クリーンアップ
+- **エラーログ**: トラブルシューティング用の詳細ログ
+- **ユーザー確認**: 処理前の安全確認プロンプト
+- **ファイル形式対応**: .xls、.xlsx、.xlsmファイルに対応
+
+## 🚀 クイックスタート
+
+### 必要な環境
+- Windows OS
+- Microsoft Excel がインストール済み
+- PowerShell 5.1 以降
+
+### インストール
+1. `Fast_Excel_CSV_Converter.ps1` をダウンロード
+2. 任意のディレクトリに配置
+3. 右クリックから「PowerShellで実行」またはコマンドラインから実行
+
+### 基本的な使用方法
+```powershell
+# コンバーターを実行
+.\Fast_Excel_CSV_Converter.ps1
+
+# バージョン確認
+.\Fast_Excel_CSV_Converter.ps1 --version
+```
+
+## 💡 動作原理
+
+### ステップバイステップ処理
+1. **ファイル選択**: 内蔵ファイルダイアログでExcelファイルを選択
+2. **モード選択**: ノーマル（書式保持）または高速（生値）変換を選択
+3. **安全確認**: 処理開始前の確認
+4. **バッチ変換**: 選択されたファイルとシートをすべて処理
+5. **出力整理**: タイムスタンプ付きフォルダに結果を保存
+
+### 出力構造
+```
+📁 あなたのディレクトリ/
+├── 📄 Fast_Excel_CSV_Converter.ps1
+└── 📁 20250916-143052/  (タイムスタンプフォルダ)
+    ├── 📄 File1-Sheet1-normal.csv
+    ├── 📄 File1-Sheet2-normal.csv
+    ├── 📄 File2-Data-highspeed.csv
+    └── 📄 error.log (エラーが発生した場合)
+```
+
+## 🔧 高度なオプション
+
+### 変換モード比較
+| 機能 | ノーマルモード | 高速モード |
+|------|----------------|------------|
+| **速度** | 標準 | 最大10倍高速 |
+| **書式** | ✅ 保持 | ❌ 生値のみ |
+| **日付** | ✅ 人間が読める形式 | ❌ シリアル番号 |
+| **通貨** | ✅ 記号付き | ❌ 数値のみ |
+| **適用場面** | 最終レポート、プレゼン | データ解析、一括処理 |
+
+### コマンドラインオプション
+```powershell
+# バージョン情報を表示
+.\Fast_Excel_CSV_Converter.ps1 --version
+.\Fast_Excel_CSV_Converter.ps1 -v
+.\Fast_Excel_CSV_Converter.ps1 /version
+```
+
+## 🛠️ トラブルシューティング
+
+### よくある問題
+- **"Excelプロセスが残っている"**: スクリプトが自動的にプロセスクリーンアップを処理します
+- **ファイルアクセス拒否**: 変換前にExcelファイルを閉じてください
+- **大きなファイルの処理が遅い**: 高速モードを使用してパフォーマンスを向上させてください
+- **エンコーディング問題**: 出力はデフォルトでUTF-8エンコーディングを使用します
+
+### エラーログ
+詳細なエラー情報については、出力ディレクトリの `error.log` ファイルを確認してください。
+
+## 📋 システム要件
+- **OS**: Windows 7/8/10/11
+- **PowerShell**: バージョン5.1以降
+- **Excel**: Microsoft Excel（任意の最新バージョン）
+- **メモリ**: ファイルサイズに依存（大きなファイルには4GB以上のRAMを推奨）
+
+## 🤝 コントリビューション
+コントリビューションを歓迎します！バグやフィーチャーリクエストについては、お気軽にプルリクエストを送信したり、イシューを開いてください。
+
+## 📄 ライセンス
+このプロジェクトはMITライセンスの下でライセンスされています - 詳細についてはLICENSEファイルをご覧ください。
+
+## 👨‍💻 作者
+- **Ryo Osawa** - *初期開発*
+- **Claude Sonnet 4.0** - *AIアシスタント*
+
+---
+
+## 🙏 Acknowledgments
+Special thanks to the PowerShell and Excel communities for their continued support and inspiration.
+
+## 📞 Support
+If you encounter any issues or have questions, please feel free to open an issue on GitHub.
+
+---
+⭐ **Star this repository if it helped you!** ⭐
